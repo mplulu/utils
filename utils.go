@@ -23,6 +23,8 @@ func test() int64 {
 	return 0
 }
 
+type Dict map[string]interface{}
+
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 	kSalt = RandHexSeq(32)
