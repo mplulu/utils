@@ -110,7 +110,7 @@ func DecryptWithRandKey(key []byte, nonce []byte, ciphertext []byte) (result []b
 func DecodeBase64Str(value string) []byte {
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
-		return err
+		return nil
 	}
 	return decoded
 }
