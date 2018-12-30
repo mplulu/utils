@@ -12,8 +12,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/p2play/p2play_backend/derror"
-	"github.com/p2play/p2play_backend/log"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -56,29 +54,24 @@ func EncryptWithRandKey(data []byte) (key []byte, nonce []byte, result []byte, e
 	randKey := RandHexSeq(32)
 	semiKey, err := hex.DecodeString(randKey)
 	if err != nil {
-		log.LogSerious("err encrypt 0 %v %v", err, randKey)
 		return nil, nil, nil, err
 	}
 	fullKey := fmt.Sprintf("%s%s", randKey, kSalt)
 	key, err = hex.DecodeString(fullKey)
 	if err != nil {
-		log.LogSerious("err encrypt 1 %v %v", err, randKey)
 		return nil, nil, nil, err
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.LogSerious("err encrypt 2 %v", err)
 		return nil, nil, nil, err
 	}
 	nonce = make([]byte, 12)
 	_, err = io.ReadFull(rand.Reader, nonce)
 	if err != nil {
-		log.LogSerious("err encrypt 3 %v", err)
 		return nil, nil, nil, err
 	}
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		log.LogSerious("err encrypt 4 %v", err)
 		return nil, nil, nil, err
 	}
 	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
@@ -87,32 +80,28 @@ func EncryptWithRandKey(data []byte) (key []byte, nonce []byte, result []byte, e
 
 func DecryptWithRandKey(key []byte, nonce []byte, ciphertext []byte) (result []byte, err error) {
 	if len(key) == 0 || len(nonce) == 0 || len(ciphertext) == 0 {
-		return nil, derror.NewErrorSingle("err:invalid_token", "reason", "cipher_empty")
+		return nil, errors.New("err:invalid_token")
 	}
 	semiKeyStr := hex.EncodeToString(key)
 	fullKey := fmt.Sprintf("%s%s", semiKeyStr, kSalt)
 
 	key, err = hex.DecodeString(fullKey)
 	if err != nil {
-		log.LogSerious("err decrypt 0 %v", err)
 		return nil, err
 	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.LogSerious("err decrypt 1 %v", err)
 		return nil, err
 	}
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		log.LogSerious("err decrypt 2 %v", err)
 		return nil, err
 	}
 	plaintext, err := aesgcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		if err.Error() == "cipher: message authentication failed" {
-			return nil, derror.NewErrorSingle("err:invalid_token", "reason", "cipher_message_authentication_failed")
+			return nil, errors.New("err:invalid_token")
 		}
-		log.LogSerious("err decrypt 3 %v", err)
 		return nil, err
 	}
 	return plaintext, nil
@@ -121,8 +110,7 @@ func DecryptWithRandKey(key []byte, nonce []byte, ciphertext []byte) (result []b
 func DecodeBase64Str(value string) []byte {
 	decoded, err := base64.StdEncoding.DecodeString(value)
 	if err != nil {
-		log.LogSerious("err decode base 64 1 %v %s", err, value)
-		return nil
+		return err
 	}
 	return decoded
 }
